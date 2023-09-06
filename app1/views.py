@@ -2,30 +2,53 @@ from django.shortcuts import render, get_object_or_404
 from .models import MyModel, MyOffice
 from django.http import JsonResponse
 from .serializers import MyModelSerializer, MyOfficeSerializer
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 # Create your views here.
 
-def detail(request, my_id):
-    m = get_object_or_404(MyModel, id = my_id)
-    m_data = MyModelSerializer(m)
-    
-    return JsonResponse(m_data.data, safe=False)
+class Detail(APIView):
+    def get(self, request, *args, **kwargs):
+        m = get_object_or_404(MyModel, id = kwargs['my_id'])
+        res = MyModelSerializer(m)
+        return Response(res.data)
 
-def all(request):
-    m = MyModel.objects.all()
-    r = MyOfficeSerializer(m, many=True)
-    
-    return JsonResponse(r.data, safe=False)   
+class All(APIView):    
+    def get(self, request):
+        model = MyModel.objects.all()
+        result = MyModelSerializer(model, many=True)
+        
+        return Response(result.data)   
 
 
-def detail2(request, office_id):
-    offices = get_object_or_404(MyOffice, id = office_id)
-    office_data = MyOfficeSerializer(offices)
-    
-    return JsonResponse(office_data.data, safe=False)
+class Detail2(APIView):
+    def get(self, request, *args, **kwargs):
+        office = get_object_or_404(MyOffice, id = kwargs['my_office__id'])
+        result = MyOfficeSerializer(office)
 
-def all2(request):
-    offices = MyOffice.objects.all()
-    result = MyOfficeSerializer(offices, many=True)
-    
-    return JsonResponse(result.data, safe=False)      
+        return Response(result.data)
+
+class All2(APIView):
+    def get(self, request):
+        office = MyOffice.objects.all()
+        res = MyOfficeSerializer(office, many=True)
+
+        return Response(res.data)   
+
+class CreateModelView(APIView):
+    def post(self, request):
+        user_body = request.data 
+        serializer = MyModelSerializer(data = user_body)          
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors)    
+
+class CreateOfficeView(APIView):
+    def post(self, request):
+        body = request.data 
+        s = MyOfficeSerializer(data = body)          
+        if s.is_valid():
+            s.save()
+            return Response(s.data)
+        return Response(s.errors) 
